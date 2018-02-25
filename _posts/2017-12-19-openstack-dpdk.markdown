@@ -24,7 +24,7 @@ This wiki describes how to set up a network coding demonstration for Service Fun
 * Ubuntu 17.04
 ## Installation
 ### Design the network
-![design_network.png](/Users/fzyitt/Documents/fzyitt.github.io/img/design_network.png)
+![design_network.png](img/design_network.png)
 ### Prepare for Devstack
 #### 1. Prepare the system
 
