@@ -1,7 +1,7 @@
 ---
 layout:     post
 title:      Openstack DPDK Deployment
-subtitle:   on multi-host
+subtitle:   Migrated from my Repo on Bitbucket thus in English
 date:       2017-12-19
 author:     Fan Zhongyi
 #header-img: img/post-bg-ios9-web.jpg
