@@ -26,14 +26,14 @@ This wiki describes how to set up a network coding demonstration for Service Fun
 ### Design the network
 ![design network.png](https://bitbucket.org/repo/rpM5jXz/images/264366350-design%20network.png)
 ### Prepare for Devstack
-####1. Prepare the system
+#### 1. Prepare the system
 ```
 #!shell
 	# install required packets
 	sudo apt update && sudo apt -y upgrade
 	sudo apt-get install -y openssh-server git vim
 ```	
-####2. Set up the network
+#### 2. Set up the network
 ```
 #!shell	
 	# disable NetworkManager and enable networking
@@ -53,7 +53,7 @@ This wiki describes how to set up a network coding demonstration for Service Fun
 	# retstart networking service
 	sudo systemctl retstart networking
 ```	
-####3. Create a non-root user 'stack'
+#### 3. Create a non-root user 'stack'
 ```
 #!shell	
 	# create 'stack' and /home/stack 
@@ -66,27 +66,27 @@ This wiki describes how to set up a network coding demonstration for Service Fun
 	sudo usermod -aG root stack
 	echo "stack ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers
 ```	
-####4. Git clone devstack in version stable/pike
+#### 4. Git clone devstack in version stable/pike
 ```
 #!shell	
 	cd /home/stack/
 	git clone https://github.com/openstack-dev/devstack.git -b stable/pike
 ```	
-####5. Configure the local.conf, samples can be found in [Repo](https://bitbucket.org/comnets/dpdk-openstack/src/768f3d845896/devstack_conf/?at=master)
+#### 5. Configure the local.conf, samples can be found in [Repo](https://bitbucket.org/comnets/dpdk-openstack/src/768f3d845896/devstack_conf/?at=master)
 ```
 #!shell	    
 	cd /home/stack/devstack
 	cp xxx_node.conf /home/stack/devstack/local.conf
 ```	
 * Make sure to change network parameters in local.conf for your own situation
-####6. Stack
+#### 6. Stack
 ```
 #!shell	
 	su stack
 	cd /home/stack/devstack
 	./stack.sh
 ```	
-###DPDK setting
+### DPDK setting
 With the plugin [networking-ovs-dpdk](https://github.com/openstack/networking-ovs-dpdk) default setting, we will probably not be able to lauch the instance after successfully stack. We should make some modifications in the settings
 ```
 #!shell	
@@ -106,7 +106,7 @@ With the plugin [networking-ovs-dpdk](https://github.com/openstack/networking-ov
 ```	
 * After successfullt running openstack on Control node, do the same steps with specific local.conf on Compute nodes
 
-###Lauch the instance
+### Lauch the instance
 ```
 #!shell	
 	# discover the compute host on 
