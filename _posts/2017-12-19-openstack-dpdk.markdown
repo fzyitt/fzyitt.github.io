@@ -27,13 +27,16 @@ This wiki describes how to set up a network coding demonstration for Service Fun
 ![design network.png](https://bitbucket.org/repo/rpM5jXz/images/264366350-design%20network.png)
 ### Prepare for Devstack
 #### 1. Prepare the system
+
 ```
 #!shell
 	# install required packets
 	sudo apt update && sudo apt -y upgrade
 	sudo apt-get install -y openssh-server git vim
 ```	
+
 #### 2. Set up the network
+
 ```
 #!shell	
 	# disable NetworkManager and enable networking
@@ -53,7 +56,9 @@ This wiki describes how to set up a network coding demonstration for Service Fun
 	# retstart networking service
 	sudo systemctl retstart networking
 ```	
+
 #### 3. Create a non-root user 'stack'
+
 ```
 #!shell	
 	# create 'stack' and /home/stack 
@@ -66,28 +71,37 @@ This wiki describes how to set up a network coding demonstration for Service Fun
 	sudo usermod -aG root stack
 	echo "stack ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers
 ```	
+
 #### 4. Git clone devstack in version stable/pike
+
 ```
 #!shell	
 	cd /home/stack/
 	git clone https://github.com/openstack-dev/devstack.git -b stable/pike
 ```	
+
 #### 5. Configure the local.conf, samples can be found in [Repo](https://bitbucket.org/comnets/dpdk-openstack/src/768f3d845896/devstack_conf/?at=master)
+
 ```
 #!shell	    
 	cd /home/stack/devstack
 	cp xxx_node.conf /home/stack/devstack/local.conf
 ```	
+
 * Make sure to change network parameters in local.conf for your own situation
+
 #### 6. Stack
+
 ```
 #!shell	
 	su stack
 	cd /home/stack/devstack
 	./stack.sh
 ```	
+
 ### DPDK setting
 With the plugin [networking-ovs-dpdk](https://github.com/openstack/networking-ovs-dpdk) default setting, we will probably not be able to lauch the instance after successfully stack. We should make some modifications in the settings
+
 ```
 #!shell	
 	cd /opt/stack/networking-ovs-dpdk/devstack/
@@ -104,9 +118,11 @@ With the plugin [networking-ovs-dpdk](https://github.com/openstack/networking-ov
 	./unstack.sh
 	./stack.sh
 ```	
+
 * After successfullt running openstack on Control node, do the same steps with specific local.conf on Compute nodes
 
 ### Lauch the instance
+
 ```
 #!shell	
 	# discover the compute host on 
@@ -120,6 +136,7 @@ With the plugin [networking-ovs-dpdk](https://github.com/openstack/networking-ov
 	# set flavor as Hugepage flavor, here we choose m1.tiny
  	openstack flavor set m1.tiny --property hw:mem_page_size=large
 ```
+
 * Then we set the security groups rules, add rules of ALL ICMP and ALL TCP ingress and egress in all CIDR
 * Last step is to lauch the instance, make sure to choose the m1.tiny we have pre-defined as the flavor
 	 
