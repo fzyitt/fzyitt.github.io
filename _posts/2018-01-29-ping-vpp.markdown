@@ -1,0 +1,132 @@
+---
+layout:     post
+title:      VPP Performance Evaluation
+subtitle:   Comparing VPP, Openvswitch, Veth pairs and Namespace, VM
+date:       2018-1-28
+author:     Fan Zhongyi
+catalog: true
+tags:
+    - Cisco
+    - VPP
+    - Openvswitch
+    - Namespace
+---
+
+# VPP Performance Evaluation
+
+This chapter contains demonstration of four matched group with correspodent performance tests and results
+analyses.
+
+# Matched group demonstration
+
+The first three models are designed to compare the overall performance among **direct veth pairs
+link**, **openvswitch bridge** and **VPP**. Each of these three networking tools is set up to 
+connect two namespaces. Any two namespaces in a pair is not assigned in same IP range, which means the
+test is set to see the performance in network layer and data link layer.
+
+Reasons of choosing Linux namespaces are listed below.
+
+- Namespace is a light weight way to isolate and virtualize Linux network stack.
+- Namespace is extensible to Linux containers and even Openstack.
+- Namespace is deploy-friendly in Openvswitch and VPP.
+
+At last, an additional test of using VPP to connect Virtual machines with vhost-user interface is carried 
+to see the difference between namespace and Virtual machine.
+
+## Veth pair connecting two namespaces
+![dlns.png](https://raw.githubusercontent.com/fzyitt/fzyitt.github.io/master/img/dlns.png)
+
+This setup uses veth pair to connect two namespaces. One side of veth pair is attached to one namespace and
+another side is attached to another namespace. Namespace 1 is assigned with ip address 192.168.1.2/24 and
+Namespace 2 with 192.168.2.2/24.
+
+## Openvswitch connecting two namespaces
+![ovsns.png](https://raw.githubusercontent.com/fzyitt/fzyitt.github.io/master/img/ovsns.png)
+
+This setup uses Openvswitch to connect two namespaces. One side of veth pair is attached to namespace and
+another side is set as a port to the bridge created in Openvswitch. Namespace 1 is assigned with ip address
+192.168.3.2/24 and Namespace 2 with 192.168.4.2/24.
+
+## VPP connecting two namespaces
+![vppns.png](https://raw.githubusercontent.com/fzyitt/fzyitt.github.io/master/img/vppns.png)
+
+This setup uses VPP to connect two namespaces. One side of veth pair is attached to namespace and
+another side is attached to host-interface created in VPP. Namespace 1 is assigned with ip address
+192.168.5.2/24 and Namespace 2 with 192.168.6.2/24.
+
+## VPP connecting two virtual machines
+![vmvpp.png](https://raw.githubusercontent.com/fzyitt/fzyitt.github.io/master/img/vmvpp.png)
+
+This setup uses VPP to connect two virtual machines. VPP can create a special connection to VM by consuming
+hugepage memory. The corresponding interface is named vhost-user interface. VM 1 is assigned with ip
+address 192.168.7.2/24 and VM 2 with 192.168.8.2/24.
+
+# Evaluation Experiment
+
+## Performance measurements
+
+The measurement metrix is data rate between two network hosts. UDP packet is used to simulate a bursting  
+network environment. To make it easy, iperf3 is used to monitor packets transmitting and receiving
+state between server and client.
+
+UDP packet size is set as 1472 bytes since the MTU (maximum transmission unit) of the link is 1500 bytes.
+Sending data rate is predefined from 0 to 6 Gbits/sec with interval of 0.5 Gbits/sec to get the results
+of practical sending and receiving data rate. For each transmission takes 10 seconds. And each data point
+is determined by 20 times transmission. All data points are calculated and into plots.
+
+## Plots show and results analysis
+
+![send.png](https://raw.githubusercontent.com/fzyitt/fzyitt.github.io/master/img/send.png)
+
+In Figure above, it can be seen that at first the matched group presents nearly the same actual sending
+rate. Then when it comes to 2.5 Gbits/sec, actual sending rate of OVS does not increases any more. The
+same happens on veth pair by nearly 4 Gbits/sec. In the whole process VPP performs the best actual
+sending rate.
+
+![rece.png](https://raw.githubusercontent.com/fzyitt/fzyitt.github.io/master/img/rece.png)
+
+Figure above contains more information since it shows performance of the receiving side. For the first phase
+is the same. However after that, The direct link of veth pair performs better than VPP and OVS. That is
+because direct link has no complex process, only transmitting. For VPP and OVS, they will deal with
+networking stack. Then when networking traffic becomes bursting, VPP shows its excellent performance with
+large amount of packets in the vector.
+
+![send1.png](https://raw.githubusercontent.com/fzyitt/fzyitt.github.io/master/img/send1.png)
+
+![rece1.png](https://raw.githubusercontent.com/fzyitt/fzyitt.github.io/master/img/rece1.png)
+
+These two figures above show the performance in both sending and receving aspects by using VPP to connect
+namespaces and VMs. In sending process, data rate between VMs is higher than between namespaces. The
+reason is that the vhost-user interface is used by VPP to connect VMs. It consumes hugepage memory. In
+receiving process, data rate between VMs performs not so good as between namespaces since network stack
+in namespace is not as complex as it is in VM.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
