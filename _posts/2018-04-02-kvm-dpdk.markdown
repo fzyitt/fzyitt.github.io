@@ -1,0 +1,70 @@
+---
+layout:     post
+title:      Using Openvswitch with dpdk in qemu-kvm
+subtitle:   Setup compare groups with and without dpdk
+date:       2018-4-2
+author:     Fan Zhongyi
+catalog: true
+tags:
+    - Openvswitch
+    - DPDK
+    - qemu-kvm
+    - guestfish
+---
+
+# Using Openvswitch with dpdk in qemu-kvm
+This wiki introduces how to configure qemu-kvm integrated in Openvswitch with and without DPDK.
+
+## Setup requirements
+* DPDK 17.05
+* Openvswitch 2.8.2
+* Ubuntu 16.04 LTS
+* qemu-system-x86_64 2.5.0
+* VM image: xenial server cloud image
+* **Network Interface Card**: Inter I219-V (which should be supported by DPDK)
+
+## Configure Ubuntu cloud image
+
+As the up to date version of Ubuntu cloud image, there is no default user and password. The only way to 
+log into these kind of images is ssh with public keys shown in first boot logging. However the situation
+is that i want to log into this without network pre-setting image in my terminal. Then the way is to change
+cloud.cfg with guestfish.
+
+``` shell
+# install guestfish in ubuntu 16.04
+sudo apt install libguestfs-tools
+# open image filw with guestfish
+guestfish --rw -a xenial-server-cloudimg-amd64-disk1.img
+# then inside guestfish terminal
+><fs> run
+><fs> list-filesystems
+/dev/sda1: ext4
+><fs> mount /dev/sda1
+# after mount, edit cloud.cfg
+vi /etc/cloud/cloud.cfg
+```
+
+After getting inside image configuration file, remember to change these parameters:
+
+``` shell
+lock_passwd: True  --> lock_passwd: False
+# add a line link below, the passwd can not be plain text, so it is generated with openssl as the plaintext 'secret'
+passwd：$1$SaltSalt$YhgRYajLPrYevs14poKBQ0
+```
+
+Then quit the guestfish, it is possible for us to login the image with username:ubuntu and passwd:secret
+
+## Install and configure DPDK with Openvswitch
+
+
+
+
+
+
+
+
+
+
+
+
+
