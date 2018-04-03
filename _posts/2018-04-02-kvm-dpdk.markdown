@@ -16,6 +16,7 @@ tags:
 This wiki introduces how to configure qemu-kvm integrated in Openvswitch with and without DPDK.
 
 ## Setup requirements
+
 * DPDK 17.05
 * Openvswitch 2.8.2
 * Ubuntu 16.04 LTS
@@ -33,13 +34,16 @@ cloud.cfg with guestfish.
 ``` shell
 # install guestfish in ubuntu 16.04
 sudo apt install libguestfs-tools
+
 # open image filw with guestfish
 guestfish --rw -a xenial-server-cloudimg-amd64-disk1.img
+
 # then inside guestfish terminal
 ><fs> run
 ><fs> list-filesystems
 /dev/sda1: ext4
 ><fs> mount /dev/sda1
+
 # after mount, edit cloud.cfg
 vi /etc/cloud/cloud.cfg
 ```
@@ -47,7 +51,9 @@ vi /etc/cloud/cloud.cfg
 After getting inside image configuration file, remember to change these parameters:
 
 ``` shell
+
 lock_passwd: True  --> lock_passwd: False
+
 # add a line link below, the passwd can not be plain text, so it is generated with openssl as the plaintext 'secret'
 passwd：$1$SaltSalt$YhgRYajLPrYevs14poKBQ0
 ```
@@ -56,7 +62,50 @@ Then quit the guestfish, it is possible for us to login the image with username:
 
 ## Install and configure DPDK with Openvswitch
 
+### Install DPDK and Openvswitch on host
 
+Since DPDK will consume hugepage, host machine should support hugepage, which should also be well configured.
+
+``` shell
+# download specfic version of DPDK package from dpdk.org
+wget http://dpdk.org/browse/dpdk/snapshot/dpdk-17.05.tar.gz
+tar -zxvf dpdk-17.05.tar.gz
+
+# configure DPDK
+cd dpdk-17.05/
+mkdir -p /usr/src/dpdk
+make config T=x86_64-native-linuxapp-gcc
+
+# destination dir of DPDK for ovs
+make install T=x86_64-native-linuxapp-gcc DESTDIR=/usr/src/dpdk
+
+# install DPDK
+make install T=x86_64-native-linuxapp-gcc DESTDIR=/usr
+```
+
+Then there is an important point that, Openvswitch version shold be compatible with responding DPDK version.
+
+``` shell
+# download specific version of Openvswitch package from openvswitch.org
+wget http://openvswitch.org/releases/openvswitch-2.8.2.tar.gz
+tar -zxvf openvswitch-2.8.2.tar.gz
+
+# compile openvswitch
+cd openvswitch-2.8.2/
+./boot.sh
+./configure \
+--with-dpdk=/usr/src/dpdk \
+--prefix=/usr \
+--exec-prefix=/usr \
+--sysconfdir=/etc \
+--localstatedir=/var
+
+# make install
+make
+make install
+```
+
+### Configure DPDK and Hugepage
 
 
 
