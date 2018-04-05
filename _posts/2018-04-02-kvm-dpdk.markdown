@@ -35,7 +35,7 @@ cloud.cfg with guestfish.
 # install guestfish in ubuntu 16.04
 sudo apt install libguestfs-tools
 
-# open image filw with guestfish
+# open image file with guestfish
 guestfish --rw -a xenial-server-cloudimg-amd64-disk1.img
 
 # then inside guestfish terminal
@@ -51,7 +51,6 @@ vi /etc/cloud/cloud.cfg
 After getting inside image configuration file, remember to change these parameters:
 
 ``` shell
-
 lock_passwd: True  --> lock_passwd: False
 
 # add a line link below, the passwd can not be plain text, so it is generated with openssl as the plaintext 'secret'
@@ -107,13 +106,106 @@ make install
 
 ### Configure DPDK and Hugepage
 
+#### 1. Configure Hugepage
 
+Enough hugepage should be preserved, since vhost-user interface will consume them.
 
+``` shell
+# check hugepage setting
+cat /etc/proc/meminfo | grep Huge
 
+# set hugepage temporarily
+echo 1024 > /proc/sys/vm/nr_hugepages
 
+# set hugepage permantly
+echo 'vm.nr_hugepages=1024' > /etc/sysctl.d/hugepages.conf
 
+# mount hugepages
+mount -t hugetlbfs none /dev/hugepages
+```
 
+#### 2. Start openvswitch deamon
 
+``` shell
+# create openvswitch path
+mkdir -p /etc/openvswiwtch
+mkdir -p /var/run/openvswitch
 
+# start openvswitch server
+ovsdb-server /etc/openvswitch/conf.db \
+-vconsole:emer -vsyslog:err -vfile:info \
+--remote=punix:/var/run/openvswitch/db.sock \
+--private-key=db:Open_vSwitch,SSL,private_key \
+--certificate=db:Open_vSwitch,SSL,certificate \
+--bootstrap-ca-cert=db:Open_vSwitch,SSL,ca_cert --no-chdir \
+--log-file=/var/log/openvswitch/ovsdb-server.log \
+--pidfile=/var/run/openvswitch/ovsdb-server.pid \
+--detach --monitor
 
+# initialize for the first time starting openvswitch
+ovs-vsctl --no-wait init
+
+# initialize openvswitch with DPDK
+ovs-vsctl --no-wait set Open_vswitch . other-config:dpdk-init=true
+ovs-vsctl --no-wait set Open_vswitch . other-config:dpdk-socket-mem="128,128"
+
+# start openvswicth deamon
+ovs-vswitchd unix:/var/run/openvswitch/db.sock \
+-vconsole:emer -vsyslog:err -vfile:info --mlockall --no-chdir \
+--log-file=/var/log/openvswitch/ovs-vswitchd.log \
+--pidfile=/var/run/openvswitch/ovs-vswitchd.pid \
+--detach --monitor
+```
+
+#### 3. Bind pythsical network interface card to DPDK
+
+``` shell
+# make sure to open VT-d ,iommu and intel_iommu to support vfio and igb-uio
+vim /boot/grub/grub.cfg
+add iommu=pt intel_iommu=on behind boot cmdline
+
+# load dpdk driver
+modprobe uio
+insmod dpdk-17.05/x86_64-native-linuxapp-gcc/kmod/igb_uio.ko
+
+# check dpdk bind status and copy the pci number of the interface which is going to bind to DPDK
+dpdk-devbind --status
+
+# bind
+dpdk-devbind --bind=uio_igb 0000:00:1f.6
+```
+Then this interface will be used to forwarding packets for DPDK.
+
+After all setting upon, openvswitch with DPDK will be successfully configured and running on host.
+
+## Create qemu-kvm and connect to ovs-dpdk
+
+### Create ovs-dpdk bridge and vhost-user port
+
+``` shell
+sudo ovs-vsctl add-br br0 -- set bridge br0 datapath_type=netdev
+sudo ovs-vsctl add-port br0 vhost-user1 -- set Interface vhost-user1 type=dpdkvhostuser
+sudo ovs-vsctl add-port br0 vhost-user2 -- set Interface vhost-user2 type=dpdkvhostuser
+```
+
+### Launch VM with DPDK vhost-user port
+
+``` shell
+sudo qemu-system-x86_64 -m 512 -smp 4 -cpu host -hda /home/vm/Downloads/ubuntu-16.04-server-cloudimg-amd64-disk1.img -boot c -enable-kvm -no-reboot -net none -nographic -chardev socket,id=char1,path=/run/openvswitch/vhost-user1 -netdev type=vhost-user,id=mynet1,chardev=char1,vhostforce -device virtio-net-pci,mac=00:00:00:00:00:01,netdev=mynet1 -object memory-backend-file,id=mem,size=512M,mem-path=/dev/hugepages,share=on -numa node,memdev=mem -mem-prealloc
+```
+
+This is the template for lauching qemu-kvm VM with DPDK vhost-user interface. For more VM to lauch, just change some parameters and boot VM on another
+terminal.
+
+When log in VM with password set before, remember to configure network settings in VM to ensure connection between host and VM, and even the Internet.
+
+### Lauch VM with normal port
+
+``` shell
+qemu-system-x86_64 -m 512 -smp 4 -cpu host -hda /home/vm/Downloads/ubuntu-16.04-server-cloudimg-amd64-disk4.img -boot c -enable-kvm -no-reboot -net none -nographic -net nic,macaddr=00:00:00:00:00:03 -net tap,ifname=vm1,script=no,downscript=no
+
+sudo ovs-vsctl add-port br0 vm1
+```
+
+Similar network setting should also be set in normal VM.
 
