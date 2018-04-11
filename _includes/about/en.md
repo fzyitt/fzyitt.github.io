@@ -9,4 +9,4 @@ Fan Zhongyi，TT，TU Dresden，5G Lab Germany.
 - **Comparision of OpenStack deployment tools** · 04/2017 - 06/2017
 - **Opendaylight service function chaining + NSH performance testing** · 10/2017 - 01/2018
 - **Vector Packet Processing (VPP): Pushing Performance Limits** · 12/2017 - 01/2018
-- **Improving FSC performance with Data Plane Development Kit (DPDK)** · 10/2017 - present
+- **Improving FSC performance with Data Plane Development Kit (DPDK)** · 10/2017 - 04/2018
